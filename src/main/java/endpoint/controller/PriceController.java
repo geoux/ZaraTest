@@ -1,6 +1,8 @@
 package endpoint.controller;
 
-import endpoint.dao.PriceDAO;
+
+import ExceptionsHandler.PriceAPIException;
+import ExceptionsHandler.ResourceNotFoundException;
 import endpoint.model.Price;
 import endpoint.service.PriceService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,16 +23,22 @@ public class PriceController {
     PriceService priceService;
 
     @GetMapping("/rangeandbrand")
-    public ResponseEntity<Price> getProductsByDateAndBrand(@RequestParam("appDate") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") LocalDateTime appDate,
+    public ResponseEntity<Object> getProductsByDateAndBrand(@RequestParam("appDate") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") LocalDateTime appDate,
                                                                 @RequestParam("prod") Integer prod,
                                                                 @RequestParam("brand") Integer brand) {
 
-        try{
+        try {
             Price result = priceService.getProductByDateAndBrand(appDate, prod, brand);
-            return (new ResponseEntity<>((result), HttpStatus.OK));
-        }catch (RuntimeException e){
-            throw new RuntimeException("Se ha producido el siguiente error recuperando los datos: " + e.getMessage());
+            return (result != null) ? (new ResponseEntity<>((result), HttpStatus.OK)) :
+                    (new ResponseEntity<>("Criteria with date: "+
+                            appDate.toString()+", and Product ID: "+
+                            prod+", and Brand ID: "+
+                            brand+", "+
+                            "did not produce results", HttpStatus.OK));
+        }catch (ResourceNotFoundException ex){
+            throw new ResourceNotFoundException("Resource","api",1);
+        }catch (PriceAPIException ex){
+            throw new PriceAPIException(HttpStatus.BAD_REQUEST,"Malformed URL");
         }
-
     }
 }

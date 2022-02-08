@@ -6,9 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class PriceService {
@@ -23,12 +23,10 @@ public class PriceService {
      * Temporal solution> implement the filter in this layer
     ******************************************************/
     public Price getProductByDateAndBrand(LocalDateTime appDate, Integer prodID, Integer brandID) {
-        Price result;
         List<Price> query = priceDAO.findByDateAndProductIDAndBrandID(appDate,prodID,brandID);
-        if (query.size() > 1)
-            result = query.parallelStream().max(Comparator.comparing(Price::getPriority)).get();
+        if(query.isEmpty())
+            return null;
         else
-            result = query.get(0);
-        return result;
+            return (query.size() > 1)?query.stream().max(Comparator.comparing(Price::getPriority)).get():query.get(0);
     }
 }

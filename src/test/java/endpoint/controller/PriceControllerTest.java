@@ -2,6 +2,7 @@ package endpoint.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import endpoint.model.Price;
+import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.runner.RunWith;
@@ -13,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -20,9 +22,42 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @AutoConfigureMockMvc
-class PriceControllerTest {
+public class PriceControllerTest {
     @Autowired
     private MockMvc mockMvc;
+
+    /*****************************
+     * Test that the response is a message indicating non existing product
+     * whereas the response status in OK.
+     * @throws Exception
+     *****************************/
+    @Test
+    public void testInexistentRow() throws Exception {
+        MvcResult mvcResult = this.mockMvc.perform(get("/zara/rangeandbrand")
+                        .param("appDate","2022-09-14T10:00:00")
+                        .param("prod","32559")
+                        .param("brand","1")
+                )
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andReturn();
+
+        assertTrue(mvcResult.getResponse().getContentAsString().contains("did not produce results"));
+    }
+
+    @Test
+    public void testBadRequest() throws Exception {
+        MvcResult mvcResult = this.mockMvc.perform(get("/zara/rangeandbrand")
+                        .param("appDate","")
+                        .param("prod","")
+                        .param("brand","")
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        assertEquals(400,mvcResult.getResponse().getStatus());
+    }
 
     /**************************************
      * ParameterizedTest to run 5 possible scenarios
@@ -66,7 +101,7 @@ class PriceControllerTest {
             "2020-06-15T10:00:00,35455,1,3",
             "2020-06-16T21:00:00,35455,1,4"
     })
-    void testScenariosForRequest(String appDate, String prodID, String brandID, String expectedID) throws Exception {
+    public void testScenariosForRequest(String appDate, String prodID, String brandID, String expectedID) throws Exception {
         MvcResult mvcResult = this.mockMvc.perform(get("/zara/rangeandbrand")
                         .param("appDate",appDate)
                         .param("prod",prodID)
@@ -82,4 +117,5 @@ class PriceControllerTest {
 
         assertEquals(expectedID, response.getId().toString());
     }
+
 }
